@@ -5,6 +5,8 @@
     "@types/express": "^5.0.3",
     "@types/node": "^24.0.15",
     "@types/passport": "^1.0.17",
+    "@types/passport-local": "^1.0.38",
+    "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "express-async-handler": "^1.2.0",
@@ -15,7 +17,7 @@
     "typescript": "^5.8.3"
   },
   "scripts": {
-    "dev": "tsc && node builds/server.js"
+    "dev": "NODE_ENV=dev tsc &&  node builds/server/server.js"
   },
   "devDependencies": {
     "prisma": "^6.12.0"
