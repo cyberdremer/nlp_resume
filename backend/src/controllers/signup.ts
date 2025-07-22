@@ -4,9 +4,12 @@ import { validationResult } from "express-validator";
 import { signUpValidator } from "../validators/validators";
 import { resolve } from "path";
 import bcrypt from "bcryptjs";
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, RequestHandler } from "express";
 import GenericError from "../errors/errorgeneric";
-import { SuccessResponse } from "../interfaces/successresponse";
+import {
+
+  SuccessfullServerReponse,
+} from "../interfaces/successresponse";
 
 const signUpController = [
   signUpValidator,
@@ -28,15 +31,16 @@ const signUpController = [
       },
     });
 
-    const successResponse: SuccessResponse<string> = {
-      status: 201,
-      message: `${email} has been succesfully registered!`,
+    const response: SuccessfullServerReponse<null> = {
+      data: {
+        status: 201,
+        message: `${email} has been succesfully registered!`,
+        object: null,
+      },
     };
 
-    res.status(successResponse.status).json(successResponse);
+    res.status(response.data.status).json(response.data);
   }),
 ];
 
-
-
-export default signUpController
+export default signUpController;
