@@ -1,9 +1,13 @@
 import { body } from "express-validator";
 import prisma from "../config/prisma";
+import bcrypt from "bcryptjs";
+import { Request } from "express-validator/lib/base";
+import { RequestHandler } from "express";
+import { User } from "@prisma/client";
 
 const emptyMessage: string = "field cannot be empty!";
 
-const signUpValidator = [
+const signUpValidator: any = [
   body("email")
     .trim()
     .notEmpty()
@@ -48,4 +52,48 @@ const signUpValidator = [
     ),
 ];
 
-export { signUpValidator };
+const loginValidator: any = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage(`Email: ${emptyMessage}`)
+    .isEmail()
+    .withMessage(`Email: is not a valid email!`)
+    .custom(async (value) => {
+      const user = await prisma.user.findUnique({
+        where: {
+          email: value,
+        },
+      });
+
+      if (!user) {
+        throw new Error(`Invalid Credentials `);
+      }
+    }),
+
+  body("password")
+    .trim()
+    .notEmpty()
+    .withMessage(`Password: ${emptyMessage}`)
+    .custom(async (value: string, { req }: { req: Request }) => {
+      const user = await prisma.user.findUnique({
+        where: {
+          email: req.body.email,
+        },
+      });
+
+      if (!user) {
+        throw new Error("Invalid Credentials");
+      }
+
+      const passwordMatch = await bcrypt.compare(
+        value,
+        user.passwordhash as string
+      );
+      if (!passwordMatch) {
+        throw new Error("Invalid Credentials");
+      }
+    }),
+];
+
+export { signUpValidator, loginValidator };
