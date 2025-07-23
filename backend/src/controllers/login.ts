@@ -56,3 +56,6 @@ const loginController: RequestHandler[] = [
     )(req, res, next);
   }),
 ];
+
+
+export default loginController
