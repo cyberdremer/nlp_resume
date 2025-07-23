@@ -1,2 +1,5 @@
 node_modules
 builds
+.env
+/generated/prisma
+test
