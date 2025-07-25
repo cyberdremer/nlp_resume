@@ -4,13 +4,17 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
+// TODO: Figure out why there is an error with enabling the vector
+
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("TEST_DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("TEST_DATABASE_URL")
+  extensions = [vector]
 }
 
 model User {
@@ -20,7 +24,8 @@ model User {
   passwordhash String?
   resumes      Resume[]
 
-  Feedback Feedback[]
+  Feedback       Feedback[]
+  JobDescription JobDescription[]
 }
 
 model Resume {
@@ -29,31 +34,53 @@ model Resume {
   userid   Int
   user     User       @relation(fields: [userid], references: [id])
   feedback Feedback[]
-  name     String
-  data     String     @db.Text
+
+  embedding Unsupported("vector(1536)")?
+
+  rawtext String
+
+  name          String
+  cloudlink     String
+  cloudpublicid String
+  mimetype      String?
+  size          Decimal
 
   @@index([userid])
 }
 
 model Feedback {
-  id     Int      @id @default(autoincrement())
-  date   DateTime @default(now())
-  userid Int
-  user   User     @relation(fields: [userid], references: [id])
+  id       Int      @id @default(autoincrement())
+  date     DateTime @default(now())
+  User     User?    @relation(fields: [userId], references: [id])
+  userId   Int?
+  Resume   Resume?  @relation(fields: [resumeId], references: [id])
+  resumeId Int?
 
-  resumeid Int
-  resume   Resume @relation(fields: [resumeid], references: [id])
-  name     String
-  data     String @db.Text
+  jobId Int?
+  job   JobDescription? @relation(fields: [jobId], references: [id])
 
-  @@index([userid])
-  @@index([resumeid])
+  name String
+  data String
+
+  @@index([userId])
+  @@index([resumeId])
+  @@index([jobId])
 }
 
+model JobDescription {
+  id        Int                         @id @default(autoincrement())
+  title     String
+  content   String
+  created   DateTime                    @default(now())
+  embedding Unsupported("vector(1536)")?
+  userId    Int
+  user      User                        @relation(fields: [userId], references: [id])
+  Feedback  Feedback[]
+}
 
 model Session {
   id        String   @id
   sid       String   @unique
-  data      String   
-  expiresAt   DateTime
+  data      String
+  expiresAt DateTime
 }
