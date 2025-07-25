@@ -5,10 +5,10 @@ import { signUpValidator } from "../validators/validators";
 import { resolve } from "path";
 import bcrypt from "bcryptjs";
 import { Request, Response, NextFunction, RequestHandler } from "express";
-import GenericError from "../errors/errorgeneric";
+import { ValidationError } from "../errors/specificerrors";
 import {
 
-  SuccessfullServerReponse,
+  SuccessfullServerResponse,
 } from "../interfaces/successresponse";
 
 const signUpController = [
@@ -16,7 +16,7 @@ const signUpController = [
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      throw new GenericError(errors.array()[0].msg, 400);
+      throw new ValidationError(errors.array()[0].msg);
     }
 
     const { firstname, lastname, email, password } = req.body;
@@ -31,7 +31,7 @@ const signUpController = [
       },
     });
 
-    const response: SuccessfullServerReponse<null> = {
+    const response: SuccessfullServerResponse = {
       data: {
         status: 201,
         message: `${email} has been succesfully registered!`,
