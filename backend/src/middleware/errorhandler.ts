@@ -1,34 +1,56 @@
-import { Request, Errback, Response, NextFunction } from "express";
-import GenericError from "../errors/errorgeneric";
+import {
+  Request,
+  Errback,
+  Response,
+  NextFunction,
+  ErrorRequestHandler,
+} from "express";
+
 import { error } from "console";
+import { BaseError } from "../errors/baseerror";
+import { UnsupportedFileType, ValidationError } from "../errors/specificerrors";
 
 interface ErrorResponse {
   error: {
     message: string;
     status: number;
+    receivedFileType?: string;
+    field?: string;
   };
 }
 
 const genericErrorHandler = (
-  err: GenericError,
+  err: unknown,
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  console.error(err.stack);
-  const status: number = err.status || 500;
-  const message: string = err.message || "Internal Server Error";
-
+  console.error(err);
   const errorResponse: ErrorResponse = {
     error: {
-      status,
-      message,
+      message: "Internal Server Error",
+      status: 500,
     },
   };
 
-  res.status(status).json(errorResponse);
+  if (err instanceof BaseError) {
+    errorResponse.error.status = err.status;
+    errorResponse.error.message = err.message;
+
+    if ("receivedFileType" in err) {
+      errorResponse.error.receivedFileType = (
+        err as UnsupportedFileType
+      ).receivedFileType;
+    }
+
+    if ("field" in err) {
+      errorResponse.error.field = (err as ValidationError).field;
+    }
+  } else if (err instanceof Error) {
+    errorResponse.error.message = err.message;
+  }
+
+  res.status(errorResponse.error.status).json(errorResponse);
 };
 
-
-
-export default genericErrorHandler
+export default genericErrorHandler;
