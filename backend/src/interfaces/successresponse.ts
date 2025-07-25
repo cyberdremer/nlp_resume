@@ -3,10 +3,10 @@ export interface SuccessResponse<T> {
   status: number;
 }
 
-export interface SuccessfullServerReponse<T> {
+export interface SuccessfullServerResponse<T = undefined> {
   data: {
     message: string;
     status: number;
-    object: T | null;
+    object: T extends undefined ? null : T
   };
 }
