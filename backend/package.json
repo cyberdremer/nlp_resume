@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@cloudinary-util/types": "^1.6.0",
     "@prisma/client": "^6.12.0",
     "@quixo3/prisma-session-store": "^3.1.13",
     "@tsconfig/node22": "^22.0.2",
@@ -8,17 +9,23 @@
     "@types/node": "^24.0.15",
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",
+    "@types/pdf-parse": "^1.1.5",
     "@types/supertest": "^6.0.3",
     "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.7.0",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "express-async-handler": "^1.2.0",
     "express-session": "^1.18.2",
     "express-validator": "^7.2.1",
+    "multer": "^2.0.2",
     "openai": "^5.10.1",
     "passport": "^0.7.0",
     "passport-local": "^1.0.0",
-    "typescript": "^5.8.3"
+    "pdf-parse": "^1.1.1",
+    "pgvector": "^0.2.1",
+    "typescript": "^5.8.3",
+    "uuid": "^11.1.0"
   },
   "scripts": {
     "dev": "NODE_ENV=test tsc &&  node builds/server/server.js",
@@ -30,6 +37,7 @@
     "@babel/preset-typescript": "^7.27.1",
     "@jest/globals": "^30.0.5",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.0.0",
     "babel-jest": "^30.0.5",
     "jest": "^30.0.5",
     "prisma": "^6.12.0",
