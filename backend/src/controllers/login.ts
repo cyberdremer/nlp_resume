@@ -3,10 +3,10 @@ import asyncHandler from "express-async-handler";
 import passport from "../config/passport";
 import { loginValidator } from "../validators/validators";
 import { validationResult } from "express-validator";
-import GenericError from "../errors/errorgeneric";
+import { ResourceNotFoundError, ValidationError } from "../errors/specificerrors";
 import { User } from "@prisma/client";
 import { Request, Response, NextFunction } from "express";
-import { SuccessfullServerReponse } from "../interfaces/successresponse";
+import { SuccessfullServerResponse } from "../interfaces/successresponse";
 
 interface UserInfo {
   email: string;
@@ -18,18 +18,18 @@ const loginController: RequestHandler[] = [
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      throw new GenericError(errors.array()[0].msg, 400);
+      throw new ValidationError(errors.array()[0].msg);
     }
 
     passport.authenticate(
       "local",
       { session: true },
-      (err: Error | GenericError, user: User) => {
+      (err: Error, user: User) => {
         if (err) {
-          return next(new GenericError(err.message, 500));
+          return next(err);
         }
         if (!user) {
-          return next(new GenericError("Invalid Credentials", 400));
+          return next(new ResourceNotFoundError("Invalid Credentials"));
         }
 
         req.login(user, (err) => {
@@ -42,7 +42,7 @@ const loginController: RequestHandler[] = [
             fullname: user.fullname,
           };
 
-          const success: SuccessfullServerReponse<UserInfo> = {
+          const success: SuccessfullServerResponse<UserInfo> = {
             data: {
               message: "You have succesfully logged in!",
               status: 200,
