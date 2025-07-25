@@ -2,9 +2,10 @@ import prisma from "./prisma";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 import session from "express-session";
 import "dotenv/config"
+import { RequestHandler } from "express";
 
 
-const sessionConfig = session({
+const sessionConfig: RequestHandler = session({
     secret: process.env.SESSION_SECRET ?? "",
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
