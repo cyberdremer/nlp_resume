@@ -96,4 +96,6 @@ const loginValidator: any = [
     }),
 ];
 
+
+
 export { signUpValidator, loginValidator };
