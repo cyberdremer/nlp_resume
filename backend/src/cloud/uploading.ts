@@ -5,13 +5,10 @@ import {
   UploadApiResponse,
 } from "cloudinary";
 import cloudUploader from "../config/cloudinary";
-import {
-  SuccessfullServerResponse,
-  SuccessResponse,
-} from "../interfaces/successresponse";
-import { resolve } from "path";
-import { idText, PrimaryExpression } from "typescript";
+import fs from "fs";
+
 import { BadRequest, ResourceNotFoundError } from "../errors/specificerrors";
+import { Readable } from "stream";
 
 const uploadBufferToCloudinary = async (
   username: string,
@@ -75,6 +72,8 @@ const replaceFileFromCloudinary = async (
 
   return uploadResult;
 };
+
+
 
 export {
   uploadBufferToCloudinary,
