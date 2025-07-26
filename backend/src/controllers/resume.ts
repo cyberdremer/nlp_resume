@@ -14,8 +14,12 @@ import { SuccessfullServerResponse } from "../interfaces/successresponse";
 import { Resume } from "@prisma/client";
 import { ResumeInfo } from "../interfaces/resume";
 import { extractTextFromPDF } from "../utility/pdfparsing";
-
-
+import generateEmbedding from "../config/openai";
+import pgvector from "pgvector";
+import { writeEmbeddingToTable } from "../utility/rawsql/rawstatements";
+import { resolve } from "path";
+import { BaseError } from "../errors/baseerror";
+import { Readable } from "stream";
 
 const uploadResumeController: RequestHandler[] = [
   isAuthorized,
@@ -30,8 +34,10 @@ const uploadResumeController: RequestHandler[] = [
     const result = await uploadBufferToCloudinary(email, buffer);
     const rawtext = await extractTextFromPDF(buffer);
     const { original_filename, secure_url, public_id } = result;
+    let embedding = await generateEmbedding(rawtext);
+    embedding = pgvector.toSql(embedding);
 
-    await prisma.resume.create({
+    const createdResume = await prisma.resume.create({
       data: {
         userid: id,
         name: original_filename,
@@ -42,6 +48,12 @@ const uploadResumeController: RequestHandler[] = [
         rawtext: rawtext,
       },
     });
+
+    const affectedRows = writeEmbeddingToTable(
+      "Resume",
+      createdResume.id,
+      embedding
+    );
 
     const response: SuccessfullServerResponse = {
       data: {
@@ -93,14 +105,14 @@ const fetchAllResumeControllers: RequestHandler[] = [
       select: {
         name: true,
         cloudlink: true,
-        cloudpublicid: true,
+        id: true,
       },
     });
 
     const resumes: ResumeInfo[] = fetchedResumes.map((fetchedResume) => {
       return <ResumeInfo>{
         name: fetchedResume.name,
-        id: fetchedResume.cloudpublicid,
+        id: fetchedResume.id,
         link: fetchedResume.cloudlink,
       };
     });
@@ -155,3 +167,75 @@ const updateResumeController: RequestHandler[] = [
     res.status(successfullResponse.data.status).json(successfullResponse);
   }),
 ];
+
+const downloadResumeController: RequestHandler[] = [
+  isAuthorized,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const { resumeId } = req.params;
+    const userid = req.user.id;
+    const resumeRecord = await prisma.resume.findFirstOrThrow({
+      where: {
+        id: Number(resumeId),
+        userid: userid,
+      },
+    });
+
+    const cloudRes = await fetch(resumeRecord.cloudlink);
+    if (!cloudRes.ok || !cloudRes.body) {
+      throw new BaseError("Failed to fetch from cloudinary", 502);
+    }
+
+    res.set({
+      "Content-Type":
+        cloudRes.headers.get("content-type") || "application/octet-stream",
+      "Content-Disposition": `attachment; filename=${resumeRecord.name}`,
+    });
+
+    Readable.fromWeb(cloudRes.body).pipe(res);
+  }),
+];
+
+const fetchOneResume: RequestHandler[] = [
+  isAuthorized,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+    const userid = req.user.id;
+
+    const resumeRecord = await prisma.resume.findFirstOrThrow({
+      where: {
+        id: Number(id),
+        userid: userid,
+      },
+      select: {
+        name: true,
+        id: true,
+        cloudlink: true,
+      },
+    });
+
+    const resumeToSend: ResumeInfo = {
+      name: resumeRecord.name,
+      link: resumeRecord.cloudlink,
+      id: resumeRecord.id,
+    };
+
+    const successfullResponse: SuccessfullServerResponse<ResumeInfo> = {
+      data: {
+        object: resumeToSend,
+        status: 200,
+        message: `${resumeRecord.name} has been found!`,
+      },
+    };
+
+    res.status(successfullResponse.data.status).json(successfullResponse.data);
+  }),
+];
+
+export {
+  updateResumeController,
+  deleteResumeController,
+  uploadResumeController,
+  downloadResumeController,
+  fetchOneResume,
+  fetchAllResumeControllers,
+};
