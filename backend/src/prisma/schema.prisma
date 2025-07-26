@@ -60,7 +60,8 @@ model Feedback {
   job   JobDescription? @relation(fields: [jobId], references: [id])
 
   name String
-  data String
+  text String
+  score Float
 
   @@index([userId])
   @@index([resumeId])
