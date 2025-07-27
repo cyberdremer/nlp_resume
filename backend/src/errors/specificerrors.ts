@@ -32,3 +32,9 @@ export class UnauthorizedError extends BaseError {
     super(message, 401);
   }
 }
+
+export class PrismaRawSQLError extends BaseError {
+  constructor(message: string = "Database Error") {
+    super(message, 500);
+  }
+}
