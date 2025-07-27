@@ -1,9 +1,11 @@
-import { body } from "express-validator";
+import { body, ValidationChain } from "express-validator";
 import prisma from "../config/prisma";
 import bcrypt from "bcryptjs";
 import { Request } from "express-validator/lib/base";
 import { RequestHandler } from "express";
 import { User } from "@prisma/client";
+import { verifyDocument } from "../config/openai";
+import { ValidationError } from "../errors/specificerrors";
 
 const emptyMessage: string = "field cannot be empty!";
 
@@ -97,5 +99,20 @@ const loginValidator: any = [
 ];
 
 
+const jobDescriptionValidator: any = [
+  body("jobdescription")
+  .trim()
+  .notEmpty()
+  .withMessage(`Job Description: ${emptyMessage}`)
+  .custom(async(value) => {
+    const isJobDescription = await verifyDocument(value)
+    if(!isJobDescription){
+      throw new ValidationError()
+    }
+  })
+  .withMessage(`Job Description: must be a valid job description`)
+]
 
-export { signUpValidator, loginValidator };
+
+
+export { signUpValidator, loginValidator, jobDescriptionValidator };
