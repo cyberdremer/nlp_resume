@@ -30,9 +30,14 @@ const uploadResumeController: RequestHandler[] = [
     }
     const { id, email } = req.user;
     const { buffer, mimetype, size } = req.file;
+    const rawtext = await extractTextFromPDF(buffer);
+
+    if (rawtext.trim().length < 100) {
+      throw new ValidationError("Resume content is too short or empty");
+    }
 
     const result = await uploadBufferToCloudinary(email, buffer);
-    const rawtext = await extractTextFromPDF(buffer);
+
     const { original_filename, secure_url, public_id } = result;
     let embedding = await generateEmbedding(rawtext);
     embedding = pgvector.toSql(embedding);
