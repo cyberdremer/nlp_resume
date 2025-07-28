@@ -2,19 +2,9 @@ import { v2 as cloudinary } from "cloudinary";
 import "dotenv/config";
 
 cloudinary.config({
-  api_key: process.env.CLOUDINARY_API,
+  secure: true,
 });
 
+const cloudUploader = cloudinary;
 
-const cloudUploader = cloudinary
-
-
-export default cloudUploader
-
-
-
-
-
-
-
-
+export default cloudUploader;
