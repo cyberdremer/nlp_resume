@@ -17,7 +17,7 @@ const fileFilter = (
     "text/plain",
   ];
 
-  if (!req.file) {
+  if (!file) {
     cb(new ValidationError(`File: you cannot upload an empty field!`));
   }
 
