@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { jobDescriptionPrompt } from "../prompts/jobdescription";
 
 const client = new OpenAI({
   apiKey: process.env["OPENAI_API_KEY"],
@@ -18,8 +19,14 @@ const generateEmbedding = async (text: string): Promise<number[]> => {
   }
 };
 
+const verifyDocument = async (documentText: string): Promise<boolean> => {
+  const response = await client.responses.create({
+    model: "o4-mini-deep-research-2025-06-26",
+    input: jobDescriptionPrompt(documentText),
+  });
 
+  const jdObject = JSON.parse(response.output_text);
+  return jdObject.isJob;
+};
 
-
-
-export default generateEmbedding
+export {generateEmbedding, verifyDocument};
