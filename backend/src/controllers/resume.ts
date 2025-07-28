@@ -5,6 +5,7 @@ import isAuthorized from "../middleware/authorized";
 import multerMiddleware from "../middleware/upload";
 import {
   deleteFileFromCloudinary,
+  downloadStreamFromCloudinary,
   replaceFileFromCloudinary,
   uploadBufferToCloudinary,
 } from "../cloud/uploading";
@@ -14,12 +15,13 @@ import { SuccessfullServerResponse } from "../interfaces/successresponse";
 import { Resume } from "@prisma/client";
 import { ResumeInfo } from "../interfaces/resume";
 import { extractTextFromPDF } from "../utility/pdfparsing";
-import generateEmbedding from "../config/openai";
+import { generateEmbedding } from "../config/openai";
 import pgvector from "pgvector";
 import { writeEmbeddingToTable } from "../utility/rawsql/rawstatements";
 import { resolve } from "path";
 import { BaseError } from "../errors/baseerror";
 import { Readable } from "stream";
+import { url } from "inspector";
 
 const uploadResumeController: RequestHandler[] = [
   isAuthorized,
@@ -28,7 +30,7 @@ const uploadResumeController: RequestHandler[] = [
     if (!req.file) {
       throw new ValidationError("File is missing");
     }
-    const { id, email } = req.user;
+    const { id, username } = req.user;
     const { buffer, mimetype, size } = req.file;
     const rawtext = await extractTextFromPDF(buffer);
 
@@ -36,11 +38,11 @@ const uploadResumeController: RequestHandler[] = [
       throw new ValidationError("Resume content is too short or empty");
     }
 
-    const result = await uploadBufferToCloudinary(email, buffer);
+    const result = await uploadBufferToCloudinary(username, buffer);
 
-    const { original_filename, secure_url, public_id } = result;
+    const { original_filename, url, public_id } = result;
     let embedding = await generateEmbedding(rawtext);
-    embedding = pgvector.toSql(embedding);
+    const embeddingSql = pgvector.toSql(embedding);
 
     const createdResume = await prisma.resume.create({
       data: {
@@ -48,16 +50,16 @@ const uploadResumeController: RequestHandler[] = [
         name: original_filename,
         size: size,
         mimetype: mimetype,
-        cloudlink: secure_url,
+        cloudlink: url,
         cloudpublicid: public_id,
         rawtext: rawtext,
       },
     });
 
-    const affectedRows = writeEmbeddingToTable(
+    const affectedRows = await writeEmbeddingToTable(
       "Resume",
       createdResume.id,
-      embedding
+      embeddingSql
     );
 
     const response: SuccessfullServerResponse = {
@@ -176,27 +178,31 @@ const updateResumeController: RequestHandler[] = [
 const downloadResumeController: RequestHandler[] = [
   isAuthorized,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const { resumeId } = req.params;
+    const { id } = req.params;
     const userid = req.user.id;
     const resumeRecord = await prisma.resume.findFirstOrThrow({
       where: {
-        id: Number(resumeId),
+        id: Number(id),
         userid: userid,
       },
     });
 
-    const cloudRes = await fetch(resumeRecord.cloudlink);
-    if (!cloudRes.ok || !cloudRes.body) {
-      throw new BaseError("Failed to fetch from cloudinary", 502);
+    const cloudlink = await downloadStreamFromCloudinary(
+      resumeRecord.cloudpublicid,
+      resumeRecord.mimetype as string
+    );
+    const cloudResponse = await fetch(cloudlink);
+    if (!cloudResponse.ok || !cloudResponse.body) {
+      throw new BaseError(cloudResponse.statusText, cloudResponse.status);
     }
 
     res.set({
       "Content-Type":
-        cloudRes.headers.get("content-type") || "application/octet-stream",
+        cloudResponse.headers.get("content-type") || "application/octet-stream",
       "Content-Disposition": `attachment; filename=${resumeRecord.name}`,
     });
 
-    Readable.fromWeb(cloudRes.body).pipe(res);
+    Readable.fromWeb(cloudResponse.body).pipe(res);
   }),
 ];
 
