@@ -20,7 +20,7 @@ const uploadBufferToCloudinary = async (
         .upload_stream(
           {
             folder: `nlp_resume_app/${username}`,
-            type: "auto",
+            resource_type: "auto",
           },
           (error, result) => {
             if (error) {
@@ -73,10 +73,39 @@ const replaceFileFromCloudinary = async (
   return uploadResult;
 };
 
+const downloadStreamFromCloudinary = async (
+  publicId: string,
+  mimeType: string
+) => {
+  try {
+    const mimeTypeMap: Record<string, string> = {
+      "application/pdf": "pdf",
+      "text/plain": "text",
+      "application/msword": "docx",
+    };
+    const extension = mimeTypeMap[mimeType];
+    if (!extension) {
+      throw new Error("Invalid extenstion");
+    }
+    const signedUrl = await cloudUploader.utils.private_download_url(
+      publicId,
+      extension,
+      {
+        type: "authenticated",
+        resource_type: "raw",
+        expires_at: Math.floor(Date.now() / 1000) + 60,
+      }
+    );
 
+    return signedUrl;
+  } catch (e) {
+    throw e;
+  }
+};
 
 export {
   uploadBufferToCloudinary,
   deleteFileFromCloudinary,
   replaceFileFromCloudinary,
+  downloadStreamFromCloudinary
 };
