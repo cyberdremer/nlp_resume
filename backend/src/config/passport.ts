@@ -20,6 +20,7 @@ passport.deserializeUser(async (id: number, done: DoneCallback) => {
         id: true,
         fullname: true,
         email: true,
+        username: true
       },
     });
     done(null, user);
