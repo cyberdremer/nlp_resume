@@ -19,12 +19,13 @@ const signUpController = [
       throw new ValidationError(errors.array()[0].msg);
     }
 
-    const { firstname, lastname, email, password } = req.body;
+    const { firstname, lastname, email, password, username } = req.body;
 
     const passwordhash = await bcrypt.hash(password, 16);
 
     const user = await prisma.user.create({
       data: {
+        username: username,
         fullname: firstname + " " + lastname,
         email: email,
         passwordhash: passwordhash,
