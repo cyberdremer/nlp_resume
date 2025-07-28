@@ -2,7 +2,7 @@ import { Response, Request, NextFunction, RequestHandler } from "express";
 import asyncHandler from "express-async-handler";
 import isAuthorized from "../middleware/authorized";
 import PdfParse from "pdf-parse";
-import generateEmbedding from "../config/openai";
+import {generateEmbedding} from "../config/openai";
 import prisma from "../config/prisma";
 import {
   computeCosineSimilarity,
