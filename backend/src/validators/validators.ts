@@ -10,6 +10,21 @@ import { ValidationError } from "../errors/specificerrors";
 const emptyMessage: string = "field cannot be empty!";
 
 const signUpValidator: any = [
+  body("username")
+    .trim()
+    .notEmpty()
+    .withMessage(`Username: ${emptyMessage}`)
+    .custom(async (value) => {
+      const user = await prisma.user.findFirst({
+        where: {
+          username: value,
+        },
+      });
+
+      if (user) {
+        throw new Error("Username is already in use!");
+      }
+    }),
   body("email")
     .trim()
     .notEmpty()
@@ -98,21 +113,18 @@ const loginValidator: any = [
     }),
 ];
 
-
 const jobDescriptionValidator: any = [
   body("jobdescription")
-  .trim()
-  .notEmpty()
-  .withMessage(`Job Description: ${emptyMessage}`)
-  .custom(async(value) => {
-    const isJobDescription = await verifyDocument(value)
-    if(!isJobDescription){
-      throw new ValidationError()
-    }
-  })
-  .withMessage(`Job Description: must be a valid job description`)
-]
-
-
+    .trim()
+    .notEmpty()
+    .withMessage(`Job Description: ${emptyMessage}`)
+    .custom(async (value) => {
+      const isJobDescription = await verifyDocument(value);
+      if (!isJobDescription) {
+        throw new ValidationError();
+      }
+    })
+    .withMessage(`Job Description: must be a valid job description`),
+];
 
 export { signUpValidator, loginValidator, jobDescriptionValidator };
