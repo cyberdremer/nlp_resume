@@ -1,5 +1,7 @@
 node_modules
 builds
 .env
-/generated/prisma
+src/test
+src/generated/prisma
+src/jest.config.js
 
