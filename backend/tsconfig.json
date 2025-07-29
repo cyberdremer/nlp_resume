@@ -2,9 +2,10 @@
   "extends": "@tsconfig/node22/tsconfig.json",
   "compilerOptions": {
     "outDir": "builds",
-    "noEmitOnError": true
+    "noEmitOnError": true,
+    
   },
-  
+  "files": ["src/types.d.ts"],
   "include": ["./src/**/*"],
   "exclude": ["node_modules", "src/test"]
 }
