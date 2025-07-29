@@ -3,13 +3,23 @@ import passport from "../config/passport";
 import sessionConfig from "../config/session";
 import logger from "../middleware/logger";
 import toplevelRouter from "../routers/toplevel";
+import cors from "cors";
 import "dotenv/config";
 
 const app = express();
 app.set("trust proxy", 1);
 
+const config = cors({
+  credentials: true,
+  origin:
+    process.env.NODE_ENV === "dev"
+      ? "http://localhost:5173"
+      : process.env.ORIGIN_URL,
+  methods: ["GET", "POST", "DELETE", "OPTIONS", "PUT"]
+});
 
 
+app.use(config)
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(sessionConfig);
